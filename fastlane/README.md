@@ -15,13 +15,21 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
+### ios fetch_cert
+
+```sh
+[bundle exec] fastlane ios fetch_cert
+```
+
+获取/创建 Apple Distribution 证书（用于从证书 subject 读取 Team ID）
+
 ### ios build
 
 ```sh
 [bundle exec] fastlane ios build
 ```
 
-生成 Xcode 工程并构建（本地验证）
+生成 Xcode 工程并构建 Release 包（自动签名）
 
 ### ios beta
 
@@ -30,6 +38,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 ```
 
 打包并上传 TestFlight
+
+### ios upload
+
+```sh
+[bundle exec] fastlane ios upload
+```
+
+仅上传已打好的 IPA 到 TestFlight
 
 ### ios register_bundle_id
 

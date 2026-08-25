@@ -12,7 +12,12 @@ platform :ios do
     )
   end
 
-  desc "生成 Xcode 工程并构建（本地验证）"
+  desc "获取/创建 Apple Distribution 证书（用于从证书 subject 读取 Team ID）"
+  lane :fetch_cert do
+    cert(api_key: api_key, output_path: "./build/certs", filename: "CondenseDist")
+  end
+
+  desc "生成 Xcode 工程并构建 Release 包（自动签名）"
   lane :build do
     sh("cd .. && xcodegen generate")
     gym(
@@ -20,15 +25,27 @@ platform :ios do
       scheme: "Condense",
       export_method: "app-store",
       output_directory: "./build",
-      clean: true
+      clean: true,
+      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=4744582SZL",
+      export_options: {
+        teamID: "4744582SZL",
+        signingStyle: "automatic",
+        uploadSymbols: true
+      }
     )
   end
 
   desc "打包并上传 TestFlight"
   lane :beta do
     build
+    upload
+  end
+
+  desc "仅上传已打好的 IPA 到 TestFlight"
+  lane :upload do
     pilot(
       api_key: api_key,
+      ipa: "./build/Condense.ipa",
       skip_waiting_for_build_processing: true,
       distribute_external: false
     )
