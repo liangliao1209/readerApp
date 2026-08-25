@@ -128,6 +128,31 @@ platform :ios do
     )
   end
 
+  desc "仅上传截图"
+  lane :screenshots do
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      skip_metadata: true,
+      overwrite_screenshots: true,
+      force: true,
+      submit_for_review: false
+    )
+  end
+
+  desc "仅上传文字元数据"
+  lane :textmeta do
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      force: true,
+      submit_for_review: false,
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false
+    )
+  end
+
   desc "上传元数据 + 截图（不提交审核）"
   lane :metadata do
     deliver(

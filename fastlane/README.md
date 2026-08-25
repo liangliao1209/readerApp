@@ -63,6 +63,22 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 创建 App Store 应用记录（首次）
 
+### ios screenshots
+
+```sh
+[bundle exec] fastlane ios screenshots
+```
+
+仅上传截图
+
+### ios textmeta
+
+```sh
+[bundle exec] fastlane ios textmeta
+```
+
+仅上传文字元数据
+
 ### ios metadata
 
 ```sh

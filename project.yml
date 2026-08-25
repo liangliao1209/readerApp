@@ -58,7 +58,9 @@ targets:
         CFBundleExecutable: $(EXECUTABLE_NAME)
         CFBundlePackageType: APPL
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
+        # 仅使用系统 HTTPS，声明豁免加密合规问询
+        ITSAppUsesExemptEncryption: true
         LSRequiresIPhoneOS: true
         UIRequiredDeviceCapabilities:
           - arm64
