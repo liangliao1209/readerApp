@@ -14,6 +14,9 @@ struct CondenseApp: App {
             let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             let container = try ModelContainer(for: schema, configurations: [configuration])
             self.container = container
+            // 演示模式（-demoContent）：空库时注入示例文章，供 UI 测试与截图
+            // 在 body 渲染前同步写入 mainContext，LibraryView 的 @Query 首次读取即可命中
+            DemoContent.seedIfNeeded(context: container.mainContext)
             _pipeline = State(initialValue: ContentPipeline(context: container.mainContext))
         } catch {
             fatalError("无法创建 SwiftData 容器: \(error)")

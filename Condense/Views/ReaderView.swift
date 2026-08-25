@@ -31,6 +31,7 @@ struct ReaderView: View {
             // 给底部压缩 bar 留出空间
             .padding(.bottom, 140)
         }
+        .accessibilityIdentifier("readerContent")
         .overlay(alignment: .bottom) {
             CompressBar(compression: $compression, displayedLevel: $displayedLevel)
         }

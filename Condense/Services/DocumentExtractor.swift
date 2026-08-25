@@ -1,6 +1,6 @@
 import Foundation
 import PDFKit
-import Compression
+import zlib
 
 struct ExtractedDocument: Sendable {
     var title: String
@@ -180,23 +180,31 @@ extension DocumentExtractor {
     }
 
     /// 解压 raw DEFLATE 数据（ZIP 压缩格式，RFC 1951）
+    /// 用 zlib 的 inflateInit2(-MAX_WBITS) 处理无 zlib 头的裸 deflate 流
     private static func inflate(_ data: Data, expectedSize: Int) -> Data? {
-        data.withUnsafeBytes { srcBuffer -> Data? in
-            guard let src = srcBuffer.baseAddress else { return nil }
-            // 预留空间：个别 ZIP 的未压缩尺寸字段不可靠时给 4MB 兜底
-            let capacity = max(expectedSize, 4 * 1024 * 1024)
-            var output = Data(count: capacity)
-            let decoded = output.withUnsafeMutableBytes { dstBuffer -> Int in
-                guard let dst = dstBuffer.baseAddress else { return 0 }
-                return compression_decode_buffer(
-                    dst.assumingMemoryBound(to: UInt8.self), capacity,
-                    src.assumingMemoryBound(to: UInt8.self), data.count,
-                    nil, COMPRESSION_DEFLATE
-                )
+        var stream = z_stream()
+        let initStatus = inflateInit2_(&stream, -MAX_WBITS, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
+        guard initStatus == Z_OK else { return nil }
+        defer { inflateEnd(&stream) }
+
+        // 预留空间：个别 ZIP 的未压缩尺寸字段不可靠时给 4MB 兜底
+        let capacity = max(expectedSize, 4 * 1024 * 1024)
+        var output = Data(count: capacity)
+
+        let result: Int32 = data.withUnsafeBytes { srcBuffer in
+            output.withUnsafeMutableBytes { dstBuffer in
+                guard let src = srcBuffer.baseAddress, let dst = dstBuffer.baseAddress else {
+                    return Z_BUF_ERROR
+                }
+                stream.next_in = UnsafeMutablePointer(mutating: src.assumingMemoryBound(to: UInt8.self))
+                stream.avail_in = uInt(data.count)
+                stream.next_out = dst.assumingMemoryBound(to: UInt8.self)
+                stream.avail_out = uInt(capacity)
+                return zlib.inflate(&stream, Z_FINISH)
             }
-            guard decoded > 0 else { return nil }
-            output.count = decoded
-            return output
         }
+        guard result == Z_STREAM_END || result == Z_OK else { return nil }
+        output.count = capacity - Int(stream.avail_out)
+        return output
     }
 }

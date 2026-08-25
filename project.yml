@@ -110,3 +110,28 @@ targets:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsWebPageWithMaxCount: 1
               NSExtensionActivationSupportsFileWithMaxCount: 1
+
+  CondenseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: CondenseUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.condense.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        # UI 测试 bundle 本身不需要签名
+        CODE_SIGNING_ALLOWED: NO
+    dependencies:
+      - target: Condense
+
+schemes:
+  Condense:
+    build:
+      targets:
+        Condense: all
+        CondenseShare: all
+    test:
+      targets:
+        - CondenseUITests

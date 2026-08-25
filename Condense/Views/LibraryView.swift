@@ -28,6 +28,7 @@ struct LibraryView: View {
                             NavigationLink(value: article) {
                                 ArticleCard(article: article)
                             }
+                            .accessibilityIdentifier("articleCard")
                             .swipeActions(edge: .trailing) {
                                 Button {
                                     article.isArchived = true

@@ -22,6 +22,7 @@ struct CompressBar: View {
                 .foregroundStyle(.secondary)
                 .contentTransition(.numericText())
                 .animation(.smooth(duration: 0.2), value: displayedLevel)
+                .accessibilityIdentifier("compressLevelLabel")
 
             HStack(spacing: 14) {
                 LevelIndicator(level: displayedLevel)
@@ -45,6 +46,9 @@ struct CompressBar: View {
         // 让整条 bar（含底部留白）都可拖动
         .contentShape(Rectangle())
         .gesture(dragGesture)
+        // 让容器本身成为可访问性元素，供 UI 测试定位
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("compressBar")
         // 拖动时轻微放大，提示可交互
         .scaleEffect(isDragging ? 1.02 : 1.0)
         .animation(.spring(duration: 0.25), value: isDragging)

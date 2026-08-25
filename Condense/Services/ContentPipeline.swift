@@ -30,8 +30,8 @@ enum PipelineError: LocalizedError {
 @MainActor
 final class ContentPipeline {
 
-    private let modelContext: ModelContext
-    private lazy var summarizer = SummarizerService(context: modelContext)
+    @ObservationIgnored private let modelContext: ModelContext
+    @ObservationIgnored private lazy var summarizer = SummarizerService(context: modelContext)
 
     /// UI 可观察的导入状态
     var isImporting = false
