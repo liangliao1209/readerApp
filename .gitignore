@@ -1,0 +1,31 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+*.moved-aside
+
+# 生成的工程（由 xcodegen 生成，可不纳入版本管理；如需提交可删除此行）
+*.xcodeproj/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+# CocoaPods / Carthage（未使用，预防性忽略）
+Pods/
+Carthage/Build/
+
+# macOS
+.DS_Store
+
+# 其他
+*.swp
+*.bak
+
+# secrets
+fastlane/keys/
+fastlane/build/

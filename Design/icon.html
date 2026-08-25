@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F7B733"/>
+      <stop offset="1" stop-color="#E8761E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F7A53B" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#F7A53B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F8F2E6"/>
+      <stop offset="1" stop-color="#F1E9D8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1024" height="1024" fill="url(#paper)"/>
+
+  <!-- 底部光晕 -->
+  <ellipse cx="512" cy="700" rx="330" ry="120" fill="url(#glow)"/>
+
+  <!-- 上方文章行：逐级变短、间距收窄，向下汇聚 -->
+  <g fill="#2E2822">
+    <rect x="192" y="218" width="640" height="30" rx="15"/>
+    <rect x="232" y="318" width="560" height="30" rx="15" opacity="0.92"/>
+    <rect x="272" y="408" width="480" height="30" rx="15" opacity="0.84"/>
+    <rect x="312" y="488" width="400" height="30" rx="15" opacity="0.76"/>
+    <rect x="352" y="558" width="320" height="30" rx="15" opacity="0.68"/>
+  </g>
+
+  <!-- 汇聚成的「一句话」 -->
+  <rect x="362" y="668" width="300" height="52" rx="26" fill="url(#amber)"/>
+</svg>
+</body>
+</html>

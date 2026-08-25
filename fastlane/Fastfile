@@ -1,0 +1,142 @@
+default_platform(:ios)
+
+# 前置条件：fastlane/keys/AuthKey_69LA8RA92Q.p8（App Store Connect API 私钥，已在位）
+
+platform :ios do
+  def api_key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"] || "69LA8RA92Q",
+      issuer_id: ENV["ASC_ISSUER_ID"] || "f5fb5913-2c6d-4218-89ee-75b370ed7498",
+      key_filepath: File.expand_path("./keys/AuthKey_69LA8RA92Q.p8", __dir__),
+      in_house: false
+    )
+  end
+
+  desc "生成 Xcode 工程并构建（本地验证）"
+  lane :build do
+    sh("cd .. && xcodegen generate")
+    gym(
+      project: "Condense.xcodeproj",
+      scheme: "Condense",
+      export_method: "app-store",
+      output_directory: "./build",
+      clean: true
+    )
+  end
+
+  desc "打包并上传 TestFlight"
+  lane :beta do
+    build
+    pilot(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+  end
+
+  desc "通过 API 注册 Bundle ID 和 App Group（App 记录需用户在 ASC 网页点一次新建）"
+  lane :register_bundle_id do
+    api_key
+    require "spaceship"
+    require "jwt"
+    require "json"
+    require "faraday"
+
+    # 1. 注册 Bundle ID（幂等：已存在则复用）
+    bundle = Spaceship::ConnectAPI::BundleId.find("com.condense.app")
+    if bundle.nil?
+      bundle = Spaceship::ConnectAPI::BundleId.create(
+        identifier: "com.condense.app",
+        name: "Condense",
+        platform: "IOS"
+      )
+      UI.success("Bundle ID 已注册: #{bundle.id}")
+    else
+      UI.message("Bundle ID 已存在: #{bundle.id}")
+    end
+
+    # 2. App Group：spaceship 没有对应模型，直接打 REST API
+    key_id = ENV["ASC_KEY_ID"] || "69LA8RA92Q"
+    issuer_id = ENV["ASC_ISSUER_ID"] || "f5fb5913-2c6d-4218-89ee-75b370ed7498"
+    ec_key = OpenSSL::PKey::EC.new(File.read(File.expand_path("./keys/AuthKey_69LA8RA92Q.p8", __dir__)))
+    token = JWT.encode(
+      { iss: issuer_id, iat: Time.now.to_i, exp: Time.now.to_i + 1200, aud: "appstoreconnect-v1" },
+      ec_key, "ES256", { kid: key_id, typ: "JWT" }
+    )
+    http = Faraday.new(url: "https://api.appstoreconnect.apple.com") do |f|
+      f.request :json
+      f.response :json
+      f.headers["Authorization"] = "Bearer #{token}"
+    end
+
+    group_resp = http.get("/v1/appGroups", { "filter[identifier]" => "group.com.condense.app.shared" })
+    groups = group_resp.body["data"] || []
+    if groups.empty?
+      create_resp = http.post("/v1/appGroups", {
+        data: { type: "appGroups", attributes: { identifier: "group.com.condense.app.shared", name: "Condense Shared" } }
+      })
+      UI.user_error!("创建 App Group 失败: #{create_resp.body}") unless create_resp.success?
+      groups = [create_resp.body["data"]]
+      UI.success("App Group 已创建")
+    else
+      UI.message("App Group 已存在")
+    end
+    group_id = groups.first["id"]
+
+    # 3. 给 Bundle ID 开启 App Groups 能力
+    cap_resp = http.post("/v1/bundleIdCapabilities", {
+      data: {
+        type: "bundleIdCapabilities",
+        attributes: {
+          capabilityType: "APP_GROUPS",
+          settings: [{ key: "APP_GROUP_IDENTIFIERS", options: [{ key: "APP_GROUP", value: group_id }] }]
+        },
+        relationships: { bundleId: { data: { type: "bundleIds", id: bundle.id } } }
+      }
+    })
+    if cap_resp.success?
+      UI.success("App Groups 能力已开启")
+    else
+      UI.important("开启能力返回: #{cap_resp.status} #{cap_resp.body}（可能已开启，需人工确认）")
+    end
+  end
+
+  desc "创建 App Store 应用记录（首次）"
+  lane :create_app do
+    api_key # 先设置 Spaceship token
+    produce(
+      app_name: "浓缩阅读",
+      language: "zh-Hans",
+      app_version: "1.0",
+      sku: "condense-read-001"
+    )
+  end
+
+  desc "上传元数据 + 截图（不提交审核）"
+  lane :metadata do
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      force: true,
+      submit_for_review: false
+    )
+  end
+
+  desc "提交审核（需用户口头确认后执行）"
+  lane :submit do
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      build_number: ENV["BUILD_NUMBER"],
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+        content_rights_contains_third_party_content: false
+      }
+    )
+  end
+end
