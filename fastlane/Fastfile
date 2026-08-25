@@ -43,17 +43,16 @@ platform :ios do
     require "faraday"
 
     # 1. 注册 Bundle ID（幂等：已存在则复用）
-    bundle = Spaceship::ConnectAPI::BundleId.find("com.condense.app")
-    if bundle.nil?
-      bundle = Spaceship::ConnectAPI::BundleId.create(
-        identifier: "com.condense.app",
-        name: "Condense",
-        platform: "IOS"
-      )
-      UI.success("Bundle ID 已注册: #{bundle.id}")
-    else
-      UI.message("Bundle ID 已存在: #{bundle.id}")
+    ["com.condense.app", "com.condense.app.share"].each do |bid|
+      b = Spaceship::ConnectAPI::BundleId.find(bid)
+      if b.nil?
+        Spaceship::ConnectAPI::BundleId.create(identifier: bid, name: bid.split(".").last.capitalize, platform: "IOS")
+        UI.success("Bundle ID 已注册: #{bid}")
+      else
+        UI.message("Bundle ID 已存在: #{bid}")
+      end
     end
+    bundle = Spaceship::ConnectAPI::BundleId.find("com.condense.app")
 
     # 2. App Group：spaceship 没有对应模型，直接打 REST API
     key_id = ENV["ASC_KEY_ID"] || "69LA8RA92Q"
